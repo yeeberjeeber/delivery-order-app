@@ -42,3 +42,6 @@ next-env.d.ts
 
 #PDFs
 *.pdf
+
+#MDs
+*.md

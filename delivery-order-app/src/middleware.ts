@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import type { Role } from "@/lib/supabase/types"
+
+type Role = "driver" | "supervisor" | "finance" | "admin"
 
 // Routes that require authentication, keyed by path prefix → allowed roles.
 // A user with a role not in the list will be redirected to their own dashboard.
