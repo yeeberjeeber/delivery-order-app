@@ -9,7 +9,7 @@ export default async function DriverLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-svh flex flex-col" style={{ backgroundColor: "#f5f7fa" }}>
-      <div className="flex-1 pb-[72px]">{children}</div>
+      <div className="flex-1 pb-18">{children}</div>
       <DriverNav />
     </div>
   )

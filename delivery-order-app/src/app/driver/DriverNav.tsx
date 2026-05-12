@@ -39,7 +39,7 @@ export default function DriverNav() {
           const active = pathname === href
           return (
             <Link key={href} href={href}
-              className="flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors"
+              className="relative flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors"
               style={{ color: active ? "#1a3a5c" : "#9ca3af" }}>
               {icon}
               <span className="text-xs font-semibold">{label}</span>
