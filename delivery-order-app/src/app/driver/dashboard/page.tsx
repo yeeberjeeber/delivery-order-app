@@ -54,7 +54,7 @@ export default async function DriverDashboard() {
             <p className="text-sm mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}</p>
             <h1 className="text-2xl font-bold text-white">{firstName}</h1>
           </div>
-          <form action="/api/auth/sign-out" method="POST">
+          <form action="/api/auth/sign-out?next=/driver/login" method="POST">
             <button
               type="submit"
               className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-xl mt-1"
