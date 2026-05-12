@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import UserMenu from "@/components/UserMenu"
 
 function monthStartSGT(): string {
   const now = new Date()
@@ -18,6 +19,7 @@ export default async function AdminDashboardPage() {
   const monthStart = monthStartSGT()
 
   const [
+    profileRes,
     usersRes,
     activeDriversRes,
     dosRes,
@@ -25,6 +27,7 @@ export default async function AdminDashboardPage() {
     pendingInvoicesRes,
     recentAuditRes,
   ] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "driver").eq("is_active", true),
     supabase.from("delivery_orders").select("id", { count: "exact", head: true }).gte("submitted_at", monthStart),
@@ -33,6 +36,7 @@ export default async function AdminDashboardPage() {
     supabase.from("audit_log").select("action, entity_type, created_at, user:profiles!audit_log_user_id_fkey(full_name)").order("created_at", { ascending: false }).limit(10),
   ])
 
+  const firstName       = profileRes.data?.full_name?.split(" ")[0] ?? "Admin"
   const totalUsers      = usersRes.count ?? 0
   const activeDrivers   = activeDriversRes.count ?? 0
   const dosThisMonth    = dosRes.count ?? 0
@@ -57,8 +61,17 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col">
       <div className="px-5 pt-14 pb-8" style={{ backgroundColor: "#1a3a5c" }}>
-        <h1 className="text-2xl font-bold text-white">Admin</h1>
-        <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>System management</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">{firstName}</h1>
+            <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>Admin Dashboard</p>
+          </div>
+          <UserMenu
+            name={firstName}
+            profileHref="/admin/profile"
+            signOutHref="/api/auth/sign-out?next=/login"
+          />
+        </div>
       </div>
 
       {/* KPI strip */}

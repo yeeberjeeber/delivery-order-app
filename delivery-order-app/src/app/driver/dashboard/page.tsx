@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import UserMenu from "@/components/UserMenu"
 
 // Today's start in SGT (UTC+8)
 function todayStartSGT(): string {
@@ -54,21 +55,11 @@ export default async function DriverDashboard() {
             <p className="text-sm mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}</p>
             <h1 className="text-2xl font-bold text-white">{firstName}</h1>
           </div>
-          <form action="/api/auth/sign-out?next=/driver/login" method="POST">
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-xl mt-1"
-              style={{ color: "rgba(255,255,255,0.7)", backgroundColor: "rgba(255,255,255,0.12)" }}
-            >
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Sign out
-            </button>
-          </form>
+          <UserMenu
+            name={firstName}
+            profileHref="/driver/profile"
+            signOutHref="/api/auth/sign-out?next=/driver/login"
+          />
         </div>
       </div>
 
