@@ -373,6 +373,8 @@ export type Database = {
       }
       supplier_invoices: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           id: string
           invoice_date: string | null
@@ -387,6 +389,8 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           invoice_date?: string | null
@@ -401,6 +405,8 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           invoice_date?: string | null
@@ -415,6 +421,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "supplier_invoices_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "supplier_invoices_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -463,6 +476,8 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -471,6 +486,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -479,6 +496,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -491,6 +510,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_active: boolean
           plate_number: string
           status: string
           updated_at: string
@@ -499,6 +519,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_active?: boolean
           plate_number: string
           status?: string
           updated_at?: string
@@ -507,6 +528,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_active?: boolean
           plate_number?: string
           status?: string
           updated_at?: string

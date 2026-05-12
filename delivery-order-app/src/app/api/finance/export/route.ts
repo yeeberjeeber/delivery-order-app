@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("delivery_orders")
-    .select("do_number, submitted_at, status, supplier:suppliers(name), driver:profiles!delivery_orders_driver_id_fkey(full_name), project_name, material_type, quantity, unit, vehicle_plate, verified_at, verifier:profiles!delivery_orders_verified_by_fkey(full_name)")
+    .select("do_number, submitted_at, status, material_type, quantity, verified_at, supplier:suppliers(name), driver:profiles!delivery_orders_driver_id_fkey(full_name), vehicle:vehicles(plate_number), project:projects(name, code), verifier:profiles!delivery_orders_verified_by_fkey(full_name)")
     .gte("submitted_at", monthStart)
     .lt("submitted_at", nextMonth)
     .order("submitted_at", { ascending: false })
@@ -88,10 +88,12 @@ export async function GET(request: Request) {
   const { data: orders, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const headers = ["D.O. Number", "Date", "Status", "Supplier", "Driver", "Project", "Material", "Qty", "Unit", "Vehicle", "Verified At", "Verified By"]
+  const headers = ["D.O. Number", "Date", "Status", "Supplier", "Driver", "Project", "Material", "Qty", "Vehicle", "Verified At", "Verified By"]
   const rows = (orders ?? []).map((o) => {
     const supplier = Array.isArray(o.supplier) ? o.supplier[0] : o.supplier
     const driver   = Array.isArray(o.driver)   ? o.driver[0]   : o.driver
+    const vehicle  = Array.isArray(o.vehicle)  ? o.vehicle[0]  : o.vehicle
+    const project  = Array.isArray(o.project)  ? o.project[0]  : o.project
     const verifier = Array.isArray(o.verifier) ? o.verifier[0] : o.verifier
     return [
       o.do_number ?? "",
@@ -99,11 +101,10 @@ export async function GET(request: Request) {
       o.status ?? "",
       supplier?.name ?? "",
       driver?.full_name ?? "",
-      o.project_name ?? "",
+      project ? `[${project.code}] ${project.name}` : "",
       o.material_type ?? "",
       o.quantity != null ? String(o.quantity) : "",
-      o.unit ?? "",
-      o.vehicle_plate ?? "",
+      vehicle?.plate_number ?? "",
       o.verified_at ? new Date(o.verified_at).toLocaleDateString("en-SG") : "",
       verifier?.full_name ?? "",
     ]

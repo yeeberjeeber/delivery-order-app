@@ -33,7 +33,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 })
   }
 
-  const { error } = await supabase.from("profiles").update(patch).eq("id", id)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await supabase.from("profiles").update(patch as any).eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await supabase.from("audit_log").insert({
@@ -41,7 +42,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     action: "update_user",
     entity_type: "profile",
     entity_id: id,
-    metadata: patch,
+    metadata: patch as Record<string, string | boolean>,
   })
 
   return NextResponse.json({ ok: true })

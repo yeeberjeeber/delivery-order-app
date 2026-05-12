@@ -39,7 +39,8 @@ export async function POST(request: Request, { params }: { params: Params }) {
 
   const insertData: Record<string, unknown> = { ...body, is_active: true }
 
-  const { data, error } = await supabase.from(table).insert(insertData).select("id").single()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase.from(table).insert(insertData as any).select("id").single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await supabase.from("audit_log").insert({
