@@ -81,6 +81,7 @@ export default function UploadForm({
   const [duplicateReason, setDuplicateReason] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [isDragging, setIsDragging] = useState(false)
 
   // ── GPS capture on mount ──────────────────────────────────────────────────
 
@@ -119,12 +120,10 @@ export default function UploadForm({
     return () => clearTimeout(timer)
   }, [form.doNumber])
 
-  // ── Photo capture ─────────────────────────────────────────────────────────
+  // ── Photo processing (shared by file input + drag and drop) ──────────────
 
-  const handlePhotoChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    e.target.value = "" // reset so same file can be re-selected
+  const processFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) return
 
     const preview = createPreviewUrl(file)
     setPhoto({ raw: file, preview, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: true, uploadError: null })
@@ -134,7 +133,6 @@ export default function UploadForm({
       const compressed = await compressImage(file)
       const base64 = await fileToBase64(compressed)
 
-      // Run Cloudinary upload + AI extraction in parallel
       const [cloudResult, extractResult] = await Promise.allSettled([
         isCloudinaryConfigured() ? uploadToCloudinary(compressed) : Promise.resolve(null),
         fetch("/api/ai/extract", {
@@ -147,7 +145,7 @@ export default function UploadForm({
       const cloud = cloudResult.status === "fulfilled" ? cloudResult.value : null
       const extracted = extractResult.status === "fulfilled" ? extractResult.value?.extracted : null
 
-      setPhoto(p => ({
+      setPhoto((p: PhotoState) => ({
         ...p,
         preview: createPreviewUrl(compressed),
         cloudinaryUrl: cloud?.url ?? null,
@@ -158,25 +156,46 @@ export default function UploadForm({
 
       setExtract({ status: extracted ? "done" : "error" })
 
-      // Pre-fill form with AI-extracted values
       if (extracted) {
-        setForm(prev => ({
+        setForm((prev: FormState) => ({
           ...prev,
           doNumber:     extracted.do_number     ?? prev.doNumber,
           materialType: (["TON","TIN","DRUM"].includes(extracted.material_type) ? extracted.material_type : prev.materialType) as MaterialType | "",
           quantity:     extracted.quantity != null ? String(extracted.quantity) : prev.quantity,
           location:     extracted.location      ?? prev.location,
-          // Match supplier by name if possible
           supplierId: suppliers.find(s =>
             s.name.toLowerCase().includes((extracted.supplier_name ?? "").toLowerCase())
           )?.id ?? prev.supplierId,
         }))
       }
     } catch {
-      setPhoto(p => ({ ...p, uploading: false, uploadError: "Something went wrong processing the photo." }))
+      setPhoto((p: PhotoState) => ({ ...p, uploading: false, uploadError: "Something went wrong processing the photo." }))
       setExtract({ status: "error" })
     }
   }, [suppliers])
+
+  const handlePhotoChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ""
+    await processFile(file)
+  }, [processFile])
+
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) await processFile(file)
+  }, [processFile])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragging(false)
+  }, [])
 
   // ── Form change ───────────────────────────────────────────────────────────
 
@@ -277,12 +296,23 @@ export default function UploadForm({
           />
 
           {photo.preview ? (
-            <div className="space-y-3">
+            <div
+              className="space-y-3"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
               {/* Preview */}
               <div className="relative rounded-xl overflow-hidden bg-gray-100" style={{ aspectRatio: "4/3" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.preview} alt="D.O. photo" className="w-full h-full object-cover" />
-                {photo.uploading && (
+                {isDragging && (
+                  <div className="absolute inset-0 rounded-xl border-2 border-dashed flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(26,58,92,0.6)", borderColor: "#fff" }}>
+                    <p className="text-white font-semibold text-sm">Drop to replace photo</p>
+                  </div>
+                )}
+                {photo.uploading && !isDragging && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="bg-white rounded-xl px-4 py-2.5 flex items-center gap-2">
                       <Spinner className="text-[#1a3a5c]" />
@@ -312,22 +342,46 @@ export default function UploadForm({
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 gap-3 py-10 active:bg-gray-100 transition-colors"
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
             >
-              <div className="flex items-center justify-center size-14 rounded-2xl" style={{ backgroundColor: "#eef2f7" }}>
-                <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="#1a3a5c"
-                  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold text-gray-700 text-sm">Tap to capture D.O. photo</p>
-                <p className="text-xs text-gray-400 mt-0.5">AI will read and fill the form automatically</p>
-              </div>
-            </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed gap-3 py-10 active:bg-gray-100 transition-colors"
+                style={{
+                  borderColor: isDragging ? "#1a3a5c" : "#e5e7eb",
+                  backgroundColor: isDragging ? "#eff6ff" : "#f9fafb",
+                }}
+              >
+                <div className="flex items-center justify-center size-14 rounded-2xl" style={{ backgroundColor: isDragging ? "#dbeafe" : "#eef2f7" }}>
+                  <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="#1a3a5c"
+                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {isDragging ? (
+                      <>
+                        <polyline points="16 16 12 12 8 16"/>
+                        <line x1="12" y1="12" x2="12" y2="21"/>
+                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                      </>
+                    ) : (
+                      <>
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </>
+                    )}
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-gray-700 text-sm">
+                    {isDragging ? "Drop photo here" : "Tap to capture D.O. photo"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {isDragging ? "Release to upload" : "Or drag and drop an image · AI will auto-fill the form"}
+                  </p>
+                </div>
+              </button>
+            </div>
           )}
         </Section>
 
