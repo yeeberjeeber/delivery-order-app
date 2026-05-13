@@ -60,7 +60,9 @@ export async function POST(request: Request) {
     const raw = gemini?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
     console.log("[ai/extract] Gemini raw response:", raw)
 
-    const json = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim()
+    // Extract the JSON object directly — handles markdown fences, leading whitespace, trailing text
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    const json = jsonMatch ? jsonMatch[0] : raw.trim()
 
     try {
       const extracted = JSON.parse(json)
