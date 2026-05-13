@@ -45,7 +45,7 @@ export async function POST(request: Request) {
             { inline_data: { mime_type: "image/jpeg", data: imageBase64 } },
           ],
         }],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 },
+        generationConfig: { temperature: 0, maxOutputTokens: 2048 },
       }),
       signal: AbortSignal.timeout(10_000),
     })
