@@ -13,7 +13,7 @@ export async function PATCH(request: Request) {
     if (full_name !== undefined) patch.full_name = full_name
     if (phone !== undefined) patch.phone = phone || null
 
-    const { error } = await supabase.from("profiles").update(patch).eq("id", user.id)
+    const { error } = await supabase.from("profiles").update(patch as any).eq("id", user.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
