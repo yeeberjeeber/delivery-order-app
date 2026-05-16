@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import UserMenu from "@/components/UserMenu"
 
 function todayStartSGT(): string {
   const now = new Date()
@@ -77,19 +76,12 @@ export default async function SupervisorDashboard() {
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-5 pt-14 pb-8" style={{ backgroundColor: "#1a3a5c" }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}</p>
-            <h1 className="text-2xl font-bold text-white">{firstName}</h1>
-            <p className="text-xs mt-1 font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>
-              Supervisor Dashboard
-            </p>
-          </div>
-          <UserMenu
-            name={firstName}
-            profileHref="/supervisor/profile"
-            signOutHref="/api/auth/sign-out?next=/login"
-          />
+        <div>
+          <p className="text-sm mb-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}</p>
+          <h1 className="text-2xl font-bold text-white">{firstName}</h1>
+          <p className="text-xs mt-1 font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Supervisor Dashboard
+          </p>
         </div>
       </div>
 

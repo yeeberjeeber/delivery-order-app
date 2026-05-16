@@ -28,7 +28,6 @@ export default async function UploadPage() {
 
   return (
     <UploadForm
-      driverId={user.id}
       vehicles={vehicles}
       suppliers={suppliersRes.data ?? []}
       projects={projectsRes.data ?? []}

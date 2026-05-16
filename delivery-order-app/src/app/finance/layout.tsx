@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import FinanceNav from "./FinanceNav"
+import UserMenu from "@/components/UserMenu"
 
 export default async function FinanceLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -9,7 +10,7 @@ export default async function FinanceLayout({ children }: { children: React.Reac
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, full_name")
     .eq("id", user.id)
     .single()
 
@@ -17,8 +18,13 @@ export default async function FinanceLayout({ children }: { children: React.Reac
     redirect("/login")
   }
 
+  const firstName = profile.full_name?.split(" ")[0] ?? "Finance"
+
   return (
     <div className="min-h-screen bg-gray-50 pb-18">
+      <div className="fixed top-4 right-4 z-50">
+        <UserMenu name={firstName} profileHref="/finance/profile" signOutHref="/api/auth/sign-out?next=/login" />
+      </div>
       {children}
       <FinanceNav />
     </div>

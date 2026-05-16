@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import UserMenu from "@/components/UserMenu"
 
 function monthStartSGT(): string {
   const now = new Date()
@@ -61,16 +60,9 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex flex-col">
       <div className="px-5 pt-14 pb-8" style={{ backgroundColor: "#1a3a5c" }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">{firstName}</h1>
-            <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>Admin Dashboard</p>
-          </div>
-          <UserMenu
-            name={firstName}
-            profileHref="/admin/profile"
-            signOutHref="/api/auth/sign-out?next=/login"
-          />
+        <div>
+          <h1 className="text-2xl font-bold text-white">{firstName}</h1>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>Admin Dashboard</p>
         </div>
       </div>
 

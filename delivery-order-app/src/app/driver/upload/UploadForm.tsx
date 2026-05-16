@@ -58,9 +58,8 @@ const BLANK_FORM: FormState = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function UploadForm({
-  driverId, vehicles, suppliers, projects, supervisors,
+  vehicles, suppliers, projects, supervisors,
 }: {
-  driverId: string
   vehicles: Vehicle[]
   suppliers: Supplier[]
   projects: Project[]
@@ -290,7 +289,6 @@ export default function UploadForm({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             className="hidden"
             onChange={handlePhotoChange}
           />
