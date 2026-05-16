@@ -41,6 +41,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
       delivery_order_flags(id, reason, notes, created_at, flagged_by)
     `)
     .eq("id", id)
+    .eq("supervisor_id", user.id)
     .single()
 
   if (!order) notFound()

@@ -9,7 +9,11 @@ export default async function DriverHistoryPage() {
 
   const { data: orders } = await supabase
     .from("delivery_orders")
-    .select("id, do_number, status, material_type, quantity, submitted_at, suppliers(name), vehicles(plate_number)")
+    .select(`
+      id, do_number, status, material_type, quantity, submitted_at,
+      suppliers(name), vehicles(plate_number),
+      delivery_order_flags(reason, notes, created_at, flagged_by:profiles!delivery_order_flags_flagged_by_fkey(full_name))
+    `)
     .eq("driver_id", user.id)
     .order("submitted_at", { ascending: false })
 

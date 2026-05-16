@@ -23,7 +23,7 @@ export async function PATCH(
 
   const { data: order, error } = await supabase
     .from("delivery_orders")
-    .update({ status: "pending", verified_by: null, verified_at: null })
+    .update({ status: "pending", verified_by: null, verified_at: null, flagged_at: null, reopened_at: new Date().toISOString() } as any)
     .eq("id", id)
     .select("do_number")
     .single()

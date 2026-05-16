@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 const STATUS_TABS = [
   { value: "all",      label: "All" },
-  { value: "pending",  label: "Pending" },
+  { value: "pending",  label: "Reopen" },
   { value: "verified", label: "Verified" },
   { value: "flagged",  label: "Flagged" },
 ]
@@ -14,6 +14,13 @@ const DATE_OPTS = [
   { value: "week",  label: "This Week" },
   { value: "all",   label: "All Time" },
 ]
+
+const DATE_LABEL: Record<string, string> = {
+  all:      "Submitted",
+  pending:  "Reopened",
+  verified: "Verified",
+  flagged:  "Flagged",
+}
 
 export default function OrderFilters() {
   const router = useRouter()
@@ -48,7 +55,10 @@ export default function OrderFilters() {
       </div>
 
       {/* Date pills */}
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] text-gray-400 shrink-0">
+          {DATE_LABEL[status] ?? "Submitted"} date:
+        </span>
         {DATE_OPTS.map((opt) => (
           <button
             key={opt.value}

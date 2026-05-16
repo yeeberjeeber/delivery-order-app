@@ -34,19 +34,23 @@ export default async function SupervisorDashboard() {
     supabase
       .from("delivery_orders")
       .select("*", { count: "exact", head: true })
+      .eq("supervisor_id", user.id)
       .eq("status", "pending"),
     supabase
       .from("delivery_orders")
       .select("*", { count: "exact", head: true })
+      .eq("supervisor_id", user.id)
       .eq("status", "verified")
       .gte("verified_at", todayStart),
     supabase
       .from("delivery_orders")
       .select("*", { count: "exact", head: true })
+      .eq("supervisor_id", user.id)
       .eq("status", "flagged"),
     supabase
       .from("delivery_orders")
       .select("*", { count: "exact", head: true })
+      .eq("supervisor_id", user.id)
       .gte("submitted_at", todayStart),
     supabase
       .from("delivery_orders")
@@ -56,6 +60,7 @@ export default async function SupervisorDashboard() {
         supplier:suppliers(name),
         vehicle:vehicles(plate_number)
       `)
+      .eq("supervisor_id", user.id)
       .eq("status", "pending")
       .order("submitted_at", { ascending: false })
       .limit(10),
@@ -88,10 +93,10 @@ export default async function SupervisorDashboard() {
       {/* ── KPI strip ──────────────────────────────────────────────────── */}
       <div className="px-4 -mt-4">
         <div className="grid grid-cols-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <KpiCell label="Review"   value={pending}  color="#f59e0b" />
-          <KpiCell label="Ver. Today" value={verified} color="#22c55e" />
-          <KpiCell label="Flagged"  value={flagged}  color="#ef4444" />
-          <KpiCell label="Today"    value={total}    />
+          <KpiCell label="Review"         value={pending}  color="#f59e0b" href="/supervisor/orders?status=pending" />
+          <KpiCell label="Verified Today" value={verified} color="#22c55e" href="/supervisor/orders?status=verified&date=today" />
+          <KpiCell label="Flagged"        value={flagged}  color="#ef4444" href="/supervisor/orders?status=flagged" />
+          <KpiCell label="Today"          value={total}                    href="/supervisor/orders?date=today" />
         </div>
       </div>
 
@@ -205,11 +210,11 @@ export default async function SupervisorDashboard() {
   )
 }
 
-function KpiCell({ label, value, color }: { label: string; value: number; color?: string }) {
+function KpiCell({ label, value, color, href }: { label: string; value: number; color?: string; href: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-4 border-r border-gray-100 last:border-r-0">
+    <Link href={href} className="flex flex-col items-center justify-center py-4 border-r border-gray-100 last:border-r-0 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer">
       <span className="text-2xl font-bold" style={{ color: color ?? "#1a3a5c" }}>{value}</span>
       <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">{label}</span>
-    </div>
+    </Link>
   )
 }

@@ -1,6 +1,14 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Link from "next/link"
+
+type Flag = {
+  reason: string
+  notes: string | null
+  created_at: string
+  flagged_by: { full_name: string } | { full_name: string }[] | null
+}
 
 type Order = {
   id: string
@@ -11,6 +19,7 @@ type Order = {
   submitted_at: string
   suppliers: { name: string } | { name: string }[] | null
   vehicles:  { plate_number: string } | { plate_number: string }[] | null
+  delivery_order_flags: Flag[] | null
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
@@ -131,30 +140,59 @@ export default function HistoryClient({ orders }: { orders: Order[] }) {
                   const s = STATUS_STYLE[order.status] ?? STATUS_STYLE.pending
                   const supplier = Array.isArray(order.suppliers) ? order.suppliers[0] : order.suppliers
                   const vehicle  = Array.isArray(order.vehicles)  ? order.vehicles[0]  : order.vehicles
+                  const flags    = order.delivery_order_flags ?? []
                   const time = new Date(order.submitted_at).toLocaleTimeString("en-SG", {
                     hour: "2-digit", minute: "2-digit", timeZone: "Asia/Singapore",
                   })
 
                   return (
-                    <div key={order.id}
-                      className="bg-white rounded-xl border border-gray-100 px-4 py-3.5 shadow-sm">
-                      <div className="flex items-start justify-between gap-3 mb-1.5">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm truncate">D.O. #{order.do_number}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 truncate">
-                            {supplier?.name ?? "—"} · {order.material_type} · {order.quantity ?? "—"}
-                          </p>
+                    <Link key={order.id} href={`/driver/history/${order.id}`}>
+                      <div className="bg-white rounded-xl border border-gray-100 shadow-sm active:scale-[0.99] transition-transform overflow-hidden">
+                        <div className="px-4 py-3.5">
+                          <div className="flex items-start justify-between gap-3 mb-1.5">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-900 text-sm truncate">D.O. #{order.do_number}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                {supplier?.name ?? "—"} · {order.material_type} · {order.quantity ?? "—"}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+                              style={{ backgroundColor: s.bg, color: s.text }}>
+                              {s.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400">{vehicle?.plate_number ?? "—"}</span>
+                            <span className="text-xs text-gray-400">{time}</span>
+                          </div>
                         </div>
-                        <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: s.bg, color: s.text }}>
-                          {s.label}
-                        </span>
+
+                        {order.status === "flagged" && flags.length > 0 && (
+                          <div className="px-4 py-3 flex flex-col gap-2"
+                            style={{ backgroundColor: "#fef2f2", borderTop: "1px solid #fecaca" }}>
+                            {flags.map((flag, i) => {
+                              const by = Array.isArray(flag.flagged_by) ? flag.flagged_by[0] : flag.flagged_by
+                              const flaggedAt = new Date(flag.created_at).toLocaleString("en-SG", {
+                                day: "numeric", month: "short",
+                                hour: "2-digit", minute: "2-digit",
+                                timeZone: "Asia/Singapore",
+                              })
+                              return (
+                                <div key={i}>
+                                  <p className="text-xs font-semibold" style={{ color: "#b91c1c" }}>{flag.reason}</p>
+                                  {flag.notes && (
+                                    <p className="text-xs mt-0.5" style={{ color: "#dc2626" }}>{flag.notes}</p>
+                                  )}
+                                  <p className="text-[11px] mt-0.5" style={{ color: "#ef4444" }}>
+                                    by {by?.full_name ?? "Supervisor"} · {flaggedAt}
+                                  </p>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">{vehicle?.plate_number ?? "—"}</span>
-                        <span className="text-xs text-gray-400">{time}</span>
-                      </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>

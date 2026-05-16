@@ -35,6 +35,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  // Pick the date column that matches the selected status
+  const dateCol =
+    status === "verified" ? "verified_at" :
+    status === "flagged"  ? "flagged_at"  :
+    status === "pending"  ? "reopened_at" :
+    "submitted_at"
+
   let query = supabase
     .from("delivery_orders")
     .select(`
@@ -44,6 +51,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       vehicle:vehicles(plate_number),
       delivery_order_flags(id, reason)
     `)
+    .eq("supervisor_id", user.id)
     .order("submitted_at", { ascending: false })
     .limit(100)
 
@@ -52,9 +60,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   }
 
   if (date === "today") {
-    query = query.gte("submitted_at", todayStartSGT())
+    query = query.gte(dateCol, todayStartSGT())
   } else if (date === "week") {
-    query = query.gte("submitted_at", weekStartSGT())
+    query = query.gte(dateCol, weekStartSGT())
   }
 
   const { data: orders = [] } = await query

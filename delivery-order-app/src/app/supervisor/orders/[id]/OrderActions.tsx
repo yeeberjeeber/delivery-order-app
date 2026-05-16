@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 const FLAG_REASONS = [
@@ -20,10 +20,13 @@ type Props = {
 export default function OrderActions({ orderId, status }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [showFlagModal, setShowFlagModal] = useState(false)
   const [reason, setReason] = useState("")
   const [notes, setNotes] = useState("")
   const [error, setError] = useState("")
+
+  const busy = loading || isPending
 
   async function callApi(path: string, body?: object) {
     setLoading(true)
@@ -40,6 +43,7 @@ export default function OrderActions({ orderId, status }: Props) {
         setLoading(false)
         return false
       }
+      setLoading(false)
       return true
     } catch {
       setError("Network error. Please try again.")
@@ -51,7 +55,7 @@ export default function OrderActions({ orderId, status }: Props) {
   async function handleVerify() {
     if (!confirm("Mark this D.O. as verified?")) return
     const ok = await callApi("verify")
-    if (ok) router.refresh()
+    if (ok) router.push("/supervisor/dashboard")
   }
 
   async function handleFlag() {
@@ -61,14 +65,14 @@ export default function OrderActions({ orderId, status }: Props) {
       setShowFlagModal(false)
       setReason("")
       setNotes("")
-      router.refresh()
+      startTransition(() => router.refresh())
     }
   }
 
   async function handleReopen() {
     if (!confirm("Re-open this D.O. for review?")) return
     const ok = await callApi("reopen")
-    if (ok) router.refresh()
+    if (ok) startTransition(() => router.refresh())
   }
 
   const btnBase = "flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50"
@@ -87,7 +91,7 @@ export default function OrderActions({ orderId, status }: Props) {
           <>
             <button
               onClick={handleVerify}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1 text-white`}
               style={{ backgroundColor: "#16a34a" }}
             >
@@ -99,7 +103,7 @@ export default function OrderActions({ orderId, status }: Props) {
             </button>
             <button
               onClick={() => setShowFlagModal(true)}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1`}
               style={{ backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
             >
@@ -119,7 +123,7 @@ export default function OrderActions({ orderId, status }: Props) {
           <>
             <button
               onClick={() => setShowFlagModal(true)}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1`}
               style={{ backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}
             >
@@ -127,7 +131,7 @@ export default function OrderActions({ orderId, status }: Props) {
             </button>
             <button
               onClick={handleReopen}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1`}
               style={{ backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}
             >
@@ -141,7 +145,7 @@ export default function OrderActions({ orderId, status }: Props) {
           <>
             <button
               onClick={handleVerify}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1 text-white`}
               style={{ backgroundColor: "#16a34a" }}
             >
@@ -153,7 +157,7 @@ export default function OrderActions({ orderId, status }: Props) {
             </button>
             <button
               onClick={handleReopen}
-              disabled={loading}
+              disabled={busy}
               className={`${btnBase} flex-1`}
               style={{ backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}
             >
@@ -230,11 +234,11 @@ export default function OrderActions({ orderId, status }: Props) {
 
             <button
               onClick={handleFlag}
-              disabled={!reason || loading}
+              disabled={!reason || busy}
               className="mt-4 w-full h-12 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
               style={{ backgroundColor: "#dc2626" }}
             >
-              {loading ? "Submitting…" : "Submit Flag"}
+              {busy ? "Submitting…" : "Submit Flag"}
             </button>
           </div>
         </div>
