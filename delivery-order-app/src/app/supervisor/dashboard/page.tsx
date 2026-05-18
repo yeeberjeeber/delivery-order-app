@@ -108,7 +108,7 @@ export default async function SupervisorDashboard() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
             Needs Review ({pending})
           </p>
-          <Link href="/supervisor/orders?status=pending"
+          <Link href="/supervisor/orders?status=all"
             className="text-xs font-semibold" style={{ color: "#1a3a5c" }}>
             View all →
           </Link>

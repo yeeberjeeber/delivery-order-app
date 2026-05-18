@@ -29,8 +29,8 @@ export default function UserMenu({
     <div ref={ref} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="size-9 rounded-full flex items-center justify-center text-sm font-bold transition-opacity active:opacity-70"
-        style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }}
+        className="size-9 rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-opacity active:opacity-70"
+        style={{ backgroundColor: "#1a3a5c", color: "#fff" }}
       >
         {initial}
       </button>
