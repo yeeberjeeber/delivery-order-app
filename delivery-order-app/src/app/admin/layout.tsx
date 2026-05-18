@@ -17,13 +17,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const firstName = profile.full_name?.split(" ")[0] ?? "Admin"
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <>
       <InactivityGuard timeoutMs={TWENTY_FOUR_HOURS} loginHref="/login" />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/admin/profile" signOutHref="/api/auth/sign-out?next=/login" />
       </div>
-      <main className="flex-1 pb-18">{children}</main>
-      <AdminNav />
-    </div>
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <main className="flex-1 pb-18">{children}</main>
+        <AdminNav />
+      </div>
+    </>
   )
 }

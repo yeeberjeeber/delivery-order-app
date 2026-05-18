@@ -16,14 +16,16 @@ export default async function DriverLayout({ children }: { children: React.React
   const firstName = profile?.full_name?.split(" ")[0] ?? "Driver"
 
   return (
-    <div className="min-h-svh flex flex-col" style={{ backgroundColor: "#f5f7fa" }}>
+    <>
       <InactivityGuard timeoutMs={SEVEN_DAYS} loginHref="/driver/login" />
       <OfflineBanner />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/driver/profile" signOutHref="/api/auth/sign-out?next=/driver/login" />
       </div>
-      <div className="flex-1 pb-18">{children}</div>
-      <DriverNav />
-    </div>
+      <div className="min-h-svh flex flex-col pb-18" style={{ backgroundColor: "#f5f7fa" }}>
+        {children}
+        <DriverNav />
+      </div>
+    </>
   )
 }

@@ -24,13 +24,15 @@ export default async function FinanceLayout({ children }: { children: React.Reac
   const firstName = profile.full_name?.split(" ")[0] ?? "Finance"
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-18">
+    <>
       <InactivityGuard timeoutMs={TWENTY_FOUR_HOURS} loginHref="/login" />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/finance/profile" signOutHref="/api/auth/sign-out?next=/login" />
       </div>
-      {children}
-      <FinanceNav />
-    </div>
+      <div className="min-h-screen bg-gray-50 pb-18">
+        {children}
+        <FinanceNav />
+      </div>
+    </>
   )
 }

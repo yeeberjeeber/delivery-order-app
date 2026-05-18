@@ -24,13 +24,15 @@ export default async function SupervisorLayout({ children }: { children: React.R
   const firstName = profile.full_name?.split(" ")[0] ?? "Supervisor"
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-18">
+    <>
       <InactivityGuard timeoutMs={TWENTY_FOUR_HOURS} loginHref="/login" />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/supervisor/profile" signOutHref="/api/auth/sign-out?next=/login" />
       </div>
-      {children}
-      <SupervisorNav />
-    </div>
+      <div className="min-h-screen bg-gray-50 pb-18">
+        {children}
+        <SupervisorNav />
+      </div>
+    </>
   )
 }

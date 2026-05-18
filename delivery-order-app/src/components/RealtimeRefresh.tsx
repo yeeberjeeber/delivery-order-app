@@ -6,27 +6,37 @@ import { createClient } from "@/lib/supabase/client"
 
 export default function RealtimeRefresh({
   table,
-  filter,
+  pollIntervalMs = 30_000,
 }: {
   table: string
-  filter?: string  // e.g. "supervisor_id=eq.abc-123"
+  filter?: string  // kept for API compatibility but not passed to subscription
+  pollIntervalMs?: number
 }) {
   const router = useRouter()
 
   useEffect(() => {
     const supabase = createClient()
 
+    // Subscribe to all changes — no row-level filter because filtered
+    // postgres_changes requires matching RLS policies on the Realtime service.
+    // The server component re-queries with the correct user filter on refresh anyway.
     const channel = supabase
-      .channel(`realtime:${table}:${filter ?? "all"}`)
+      .channel(`realtime:${table}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table, filter },
+        { event: "*", schema: "public", table },
         () => router.refresh()
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
-  }, [table, filter, router])
+    // Polling fallback in case the websocket connection isn't established
+    const timer = setInterval(() => router.refresh(), pollIntervalMs)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(timer)
+    }
+  }, [table, router, pollIntervalMs])
 
   return null
 }
