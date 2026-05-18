@@ -2,6 +2,9 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import AdminNav from "./AdminNav"
 import UserMenu from "@/components/UserMenu"
+import InactivityGuard from "@/components/InactivityGuard"
+
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,6 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      <InactivityGuard timeoutMs={TWENTY_FOUR_HOURS} loginHref="/login" />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/admin/profile" signOutHref="/api/auth/sign-out?next=/login" />
       </div>

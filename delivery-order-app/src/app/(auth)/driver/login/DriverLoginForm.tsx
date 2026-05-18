@@ -11,7 +11,10 @@ type Step = "details" | "otp"
 const RESEND_COOLDOWN = 60
 
 function sanitizePhone(raw: string) {
-  return raw.replace(/\D/g, "").slice(0, 8)
+  let digits = raw.replace(/\D/g, "")
+  // Strip +65 / 65 country code if autofilled by iOS
+  if (digits.startsWith("65") && digits.length > 8) digits = digits.slice(2)
+  return digits.slice(0, 8)
 }
 
 function formatDisplay(digits: string) {
@@ -291,7 +294,7 @@ function DetailsStep({
             onChange={(e) => onPhoneChange(sanitizePhone(e.target.value))}
             onKeyDown={(e) => e.key === "Enter" && onSubmit()}
             autoFocus={mode === "signin"}
-            autoComplete="tel"
+            autoComplete="tel-national"
             className="flex-1 bg-transparent px-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
           />
         </div>

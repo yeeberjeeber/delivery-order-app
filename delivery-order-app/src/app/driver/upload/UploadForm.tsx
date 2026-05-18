@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { compressImage, fileToBase64, createPreviewUrl } from "@/lib/image"
 import { uploadToCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary"
+import { enqueue } from "@/lib/offline-queue"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ interface FormState {
 interface PhotoState {
   raw: File | null
   preview: string | null
+  compressedBase64: string | null
   cloudinaryUrl: string | null
   cloudinaryPublicId: string | null
   uploading: boolean
@@ -70,9 +72,10 @@ export default function UploadForm({
 
   const [form, setForm] = useState<FormState>(BLANK_FORM)
   const [photo, setPhoto] = useState<PhotoState>({
-    raw: null, preview: null, cloudinaryUrl: null,
+    raw: null, preview: null, compressedBase64: null, cloudinaryUrl: null,
     cloudinaryPublicId: null, uploading: false, uploadError: null,
   })
+  const [queued, setQueued] = useState(false)
   const [extract, setExtract] = useState<ExtractState>({ status: "idle" })
   const [gps, setGps] = useState<GpsState>({ status: "idle", lat: null, lng: null })
   const [duplicate, setDuplicate] = useState<DuplicateState>({ status: "idle", existingOrder: null })
@@ -125,7 +128,7 @@ export default function UploadForm({
     if (!file.type.startsWith("image/")) return
 
     const preview = createPreviewUrl(file)
-    setPhoto({ raw: file, preview, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: true, uploadError: null })
+    setPhoto({ raw: file, preview, compressedBase64: null, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: true, uploadError: null })
     setExtract({ status: "extracting" })
 
     try {
@@ -147,6 +150,7 @@ export default function UploadForm({
       setPhoto((p: PhotoState) => ({
         ...p,
         preview: createPreviewUrl(compressed),
+        compressedBase64: base64,
         cloudinaryUrl: cloud?.url ?? null,
         cloudinaryPublicId: cloud?.publicId ?? null,
         uploading: false,
@@ -226,26 +230,39 @@ export default function UploadForm({
     setSubmitting(true)
     setError("")
 
+    const payload = {
+      do_number:                 form.doNumber,
+      vehicle_id:                form.vehicleId,
+      supplier_id:               form.supplierId,
+      material_type:             form.materialType,
+      quantity:                  parseFloat(form.quantity),
+      project_id:                form.projectId   || null,
+      supervisor_id:             form.supervisorId || null,
+      location:                  form.location    || null,
+      remarks:                   form.remarks     || null,
+      photo_url:                 photo.cloudinaryUrl,
+      photo_public_id:           photo.cloudinaryPublicId,
+      gps_lat:                   gps.lat,
+      gps_lng:                   gps.lng,
+      is_duplicate_override:     duplicateOverride,
+      duplicate_override_reason: duplicateReason || null,
+    }
+
+    // Offline — save to IndexedDB queue and show confirmation
+    if (!navigator.onLine) {
+      await enqueue({
+        payload,
+        photoBase64: photo.compressedBase64 ?? undefined,
+      })
+      setSubmitting(false)
+      setQueued(true)
+      return
+    }
+
     const res = await fetch("/api/delivery-orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        do_number:                 form.doNumber,
-        vehicle_id:                form.vehicleId,
-        supplier_id:               form.supplierId,
-        material_type:             form.materialType,
-        quantity:                  parseFloat(form.quantity),
-        project_id:                form.projectId   || null,
-        supervisor_id:             form.supervisorId || null,
-        location:                  form.location    || null,
-        remarks:                   form.remarks     || null,
-        photo_url:                 photo.cloudinaryUrl,
-        photo_public_id:           photo.cloudinaryPublicId,
-        gps_lat:                   gps.lat,
-        gps_lng:                   gps.lng,
-        is_duplicate_override:     duplicateOverride,
-        duplicate_override_reason: duplicateReason || null,
-      }),
+      body: JSON.stringify(payload),
     })
 
     setSubmitting(false)
@@ -265,6 +282,33 @@ export default function UploadForm({
     !!form.materialType && !!form.quantity
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  if (queued) {
+    return (
+      <div className="flex flex-col min-h-svh items-center justify-center px-6 text-center gap-5">
+        <div className="size-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#fef9c3" }}>
+          <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="#a16207"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-gray-900">Saved for later</p>
+          <p className="text-sm text-gray-500 mt-1">
+            You&apos;re offline. This D.O. will be submitted automatically when your connection is restored.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push("/driver/dashboard")}
+          className="mt-2 w-full max-w-xs h-12 rounded-2xl text-sm font-semibold text-white"
+          style={{ backgroundColor: "#1a3a5c" }}
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-svh">

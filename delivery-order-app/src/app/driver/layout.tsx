@@ -2,6 +2,10 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import DriverNav from "./DriverNav"
 import UserMenu from "@/components/UserMenu"
+import OfflineBanner from "@/components/OfflineBanner"
+import InactivityGuard from "@/components/InactivityGuard"
+
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -13,6 +17,8 @@ export default async function DriverLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-svh flex flex-col" style={{ backgroundColor: "#f5f7fa" }}>
+      <InactivityGuard timeoutMs={SEVEN_DAYS} loginHref="/driver/login" />
+      <OfflineBanner />
       <div className="fixed top-4 right-4 z-50">
         <UserMenu name={firstName} profileHref="/driver/profile" signOutHref="/api/auth/sign-out?next=/driver/login" />
       </div>
