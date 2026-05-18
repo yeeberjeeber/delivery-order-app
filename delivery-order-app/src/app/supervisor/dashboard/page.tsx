@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import RealtimeRefresh from "@/components/RealtimeRefresh"
 
 function todayStartSGT(): string {
   const now = new Date()
@@ -78,6 +79,7 @@ export default async function SupervisorDashboard() {
 
   return (
     <div className="flex flex-col">
+      <RealtimeRefresh table="delivery_orders" filter={`supervisor_id=eq.${user.id}`} />
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-5 pt-14 pb-8" style={{ backgroundColor: "#1a3a5c" }}>
