@@ -38,7 +38,7 @@ interface PhotoState {
 }
 
 interface ExtractState {
-  status: "idle" | "extracting" | "done" | "error"
+  status: "idle" | "extracting" | "done" | "error" | "offline"
 }
 
 interface GpsState {
@@ -128,12 +128,23 @@ export default function UploadForm({
     if (!file.type.startsWith("image/")) return
 
     const preview = createPreviewUrl(file)
-    setPhoto({ raw: file, preview, compressedBase64: null, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: true, uploadError: null })
-    setExtract({ status: "extracting" })
+    const isOffline = !navigator.onLine
+    setPhoto({ raw: file, preview, compressedBase64: null, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: !isOffline, uploadError: null })
+    setExtract({ status: isOffline ? "offline" : "extracting" })
 
     try {
       const compressed = await compressImage(file)
       const base64 = await fileToBase64(compressed)
+
+      if (isOffline) {
+        setPhoto((p: PhotoState) => ({
+          ...p,
+          preview: createPreviewUrl(compressed),
+          compressedBase64: base64,
+          uploading: false,
+        }))
+        return
+      }
 
       const [cloudResult, extractResult] = await Promise.allSettled([
         isCloudinaryConfigured() ? uploadToCloudinary(compressed) : Promise.resolve(null),
@@ -658,9 +669,10 @@ function AIStatus({ status }: { status: ExtractState["status"] }) {
   if (status === "idle") return null
 
   const config = {
-    extracting: { icon: <Spinner />, text: "Reading D.O. with AI…",  color: "#1a3a5c", bg: "#eef2f7" },
+    extracting: { icon: <Spinner />,   text: "Reading D.O. with AI…",              color: "#1a3a5c", bg: "#eef2f7" },
     done:       { icon: <CheckIcon />, text: "Fields filled by AI — please review", color: "#15803d", bg: "#dcfce7" },
     error:      { icon: <InfoIcon />,  text: "AI couldn't read this — fill in manually", color: "#a16207", bg: "#fef9c3" },
+    offline:    { icon: <InfoIcon />,  text: "Offline — fill in fields manually",   color: "#6b7280", bg: "#f3f4f6" },
   }[status]
 
   if (!config) return null
