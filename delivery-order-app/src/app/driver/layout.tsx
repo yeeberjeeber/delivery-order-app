@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import DriverNav from "./DriverNav"
+import SwipeNav from "./SwipeNav"
 import UserMenu from "@/components/UserMenu"
 import OfflineBanner from "@/components/OfflineBanner"
 import InactivityGuard from "@/components/InactivityGuard"
@@ -23,7 +24,7 @@ export default async function DriverLayout({ children }: { children: React.React
         <UserMenu name={firstName} profileHref="/driver/profile" signOutHref="/api/auth/sign-out?next=/driver/login" />
       </div>
       <div className="min-h-svh flex flex-col pb-18" style={{ backgroundColor: "#f5f7fa" }}>
-        {children}
+        <SwipeNav>{children}</SwipeNav>
         <DriverNav />
       </div>
     </>
