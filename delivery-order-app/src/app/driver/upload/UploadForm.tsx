@@ -324,15 +324,9 @@ export default function UploadForm({
   return (
     <div className="flex flex-col min-h-svh">
 
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4" style={{ backgroundColor: "#1a3a5c" }}>
-        <button onClick={() => router.back()} className="text-white/70 hover:text-white transition-colors">
-          <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 5l-7 7 7 7"/>
-          </svg>
-        </button>
-        <h1 className="text-lg font-semibold text-white">Capture Delivery Order</h1>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div className="px-5 pt-14 pb-5" style={{ backgroundColor: "#1a3a5c" }}>
+        <h1 className="text-xl font-bold text-white">Capture Delivery Order</h1>
       </div>
 
       {/* ── Scrollable content ────────────────────────────────────────────── */}
