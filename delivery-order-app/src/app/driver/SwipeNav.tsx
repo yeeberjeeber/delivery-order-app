@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
 const TABS = [
@@ -9,41 +9,119 @@ const TABS = [
   "/driver/history",
 ]
 
-// Only swipe on the top-level tab pages, not on detail pages
-const MIN_DISTANCE = 72   // px — far enough to be intentional
-const AXIS_RATIO   = 1.8  // horizontal must be this many times greater than vertical
+const COMMIT_THRESHOLD = 80   // px needed to trigger navigation
+const EDGE_RESISTANCE  = 0.2  // factor applied when swiping past the first/last tab
 
 export default function SwipeNav({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const start    = useRef<{ x: number; y: number } | null>(null)
 
-  function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0]
-    start.current = { x: t.clientX, y: t.clientY }
-  }
+  const [offset,    setOffset]    = useState(0)
+  const [animating, setAnimating] = useState(false)
 
-  function onTouchEnd(e: React.TouchEvent) {
-    if (!start.current) return
-    const t  = e.changedTouches[0]
-    const dx = t.clientX - start.current.x
-    const dy = t.clientY - start.current.y
-    start.current = null
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const startXY       = useRef<{ x: number; y: number } | null>(null)
+  const swipeDir      = useRef<"horizontal" | "vertical" | null>(null)
+  const currentOffset = useRef(0)  // mirrors state so touchend can read latest value
 
-    if (Math.abs(dx) < MIN_DISTANCE) return
-    if (Math.abs(dx) < Math.abs(dy) * AXIS_RATIO) return  // vertical scroll, not swipe
+  const idx = TABS.indexOf(pathname)
 
-    // Only navigate on exact tab routes — don't swipe on detail/sub-pages
-    const idx = TABS.indexOf(pathname)
-    if (idx === -1) return
+  // Keep ref in sync with state
+  useEffect(() => { currentOffset.current = offset }, [offset])
 
-    const target = dx < 0 ? TABS[idx + 1] : TABS[idx - 1]
-    if (target) router.push(target)
-  }
+  const commit = useCallback((finalOffset: number) => {
+    const target =
+      finalOffset < -COMMIT_THRESHOLD ? TABS[idx + 1] :
+      finalOffset >  COMMIT_THRESHOLD ? TABS[idx - 1] :
+      null
+
+    if (target) {
+      const exitTo = finalOffset < 0 ? -window.innerWidth : window.innerWidth
+      setAnimating(true)
+      setOffset(exitTo)
+      setTimeout(() => {
+        setOffset(0)
+        setAnimating(false)
+        router.push(target)
+      }, 200)
+    } else {
+      setAnimating(true)
+      setOffset(0)
+      setTimeout(() => setAnimating(false), 250)
+    }
+  }, [idx, router])
+
+  // Attach touch listeners as non-passive so we can preventDefault on horizontal swipes
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    function onTouchStart(e: TouchEvent) {
+      if (idx === -1) return
+      const t = e.touches[0]
+      startXY.current  = { x: t.clientX, y: t.clientY }
+      swipeDir.current = null
+      setAnimating(false)
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!startXY.current || idx === -1) return
+      const t  = e.touches[0]
+      const dx = t.clientX - startXY.current.x
+      const dy = t.clientY - startXY.current.y
+
+      // Wait until movement is clear enough to determine direction
+      if (!swipeDir.current) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return
+        swipeDir.current = Math.abs(dx) >= Math.abs(dy) ? "horizontal" : "vertical"
+      }
+
+      if (swipeDir.current !== "horizontal") return
+
+      // Prevent the page from scrolling vertically while swiping horizontally
+      e.preventDefault()
+
+      // Apply rubber-band resistance at the edges
+      let d = dx
+      if (dx > 0 && idx === 0)                  d = dx * EDGE_RESISTANCE
+      if (dx < 0 && idx === TABS.length - 1)    d = dx * EDGE_RESISTANCE
+
+      setOffset(d)
+    }
+
+    function onTouchEnd() {
+      if (!startXY.current || swipeDir.current !== "horizontal") {
+        startXY.current  = null
+        swipeDir.current = null
+        return
+      }
+      startXY.current  = null
+      swipeDir.current = null
+      commit(currentOffset.current)
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true })
+    el.addEventListener("touchmove",  onTouchMove,  { passive: false })
+    el.addEventListener("touchend",   onTouchEnd,   { passive: true })
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart)
+      el.removeEventListener("touchmove",  onTouchMove)
+      el.removeEventListener("touchend",   onTouchEnd)
+    }
+  }, [idx, commit])
 
   return (
-    <div className="flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      {children}
+    <div ref={containerRef} className="flex-1 overflow-hidden">
+      <div
+        style={{
+          transform:  `translateX(${offset}px)`,
+          transition: animating ? "transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)" : "none",
+          willChange: "transform",
+        }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
