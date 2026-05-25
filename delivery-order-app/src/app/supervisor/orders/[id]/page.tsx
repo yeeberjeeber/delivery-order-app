@@ -73,7 +73,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-5 pt-14 pb-5" style={{ backgroundColor: "#1a3a5c" }}>
         <div className="flex items-center gap-3">
-          <Link href="/supervisor/orders"
+          <Link href="/supervisor/dashboard"
             className="size-8 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: "rgba(255,255,255,0.12)" }}>
             <svg className="size-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor"
