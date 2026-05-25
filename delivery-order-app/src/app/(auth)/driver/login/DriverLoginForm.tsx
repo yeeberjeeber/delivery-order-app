@@ -98,6 +98,7 @@ export default function DriverLoginForm() {
         .eq("id", data.user.id)
     }
 
+    localStorage.setItem("lastActiveAt", Date.now().toString())
     router.push("/driver/dashboard")
   }
 

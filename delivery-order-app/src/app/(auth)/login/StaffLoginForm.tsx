@@ -55,6 +55,8 @@ export default function StaffLoginForm() {
       .eq("id", data.user.id)
       .single()
     const role = profile?.role as Role | undefined
+    // Reset inactivity timer so InactivityGuard doesn't immediately sign out
+    localStorage.setItem("lastActiveAt", Date.now().toString())
     router.push(role ? ROLE_HOME[role] : "/")
   }
 
