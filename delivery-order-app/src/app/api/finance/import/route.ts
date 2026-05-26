@@ -114,7 +114,8 @@ export async function POST(request: Request) {
   })
 
   if (toInsert.length > 0) {
-    const { error } = await supabase.from("delivery_orders").insert(toInsert)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase.from("delivery_orders").insert(toInsert as any)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

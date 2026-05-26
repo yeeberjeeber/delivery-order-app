@@ -85,11 +85,12 @@ export async function POST(request: Request) {
       return true
     }).map(r => ({
       name: r.name.trim(),
-      code:      r.code?.trim()      || null,
+      code:      r.code?.trim()      || "",
       is_active: true,
     }))
     if (toInsert.length > 0) {
-      const { error } = await supabase.from("projects").insert(toInsert)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("projects").insert(toInsert as any)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       inserted = toInsert.length
     }
