@@ -22,7 +22,6 @@ export default function UploadInvoiceModal({ suppliers }: { suppliers: Supplier[
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [open, setOpen] = useState(false)
-  const [step, setStep] = useState<"upload" | "review">("upload")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -32,18 +31,21 @@ export default function UploadInvoiceModal({ suppliers }: { suppliers: Supplier[
   const [totalAmount, setTotalAmount]     = useState("")
   const [lineItems, setLineItems]         = useState<ExtractedInvoice["line_items"]>([{ do_number: "", quantity: null, unit_price: null, amount: null }])
   const [previewUrl, setPreviewUrl]       = useState<string | null>(null)
+  const [isPdf, setIsPdf]                 = useState(false)
   const [extracting, setExtracting]       = useState(false)
 
   function reset() {
-    setStep("upload"); setError(""); setSupplierId(""); setInvoiceNumber("")
+    setError(""); setSupplierId(""); setInvoiceNumber("")
     setInvoiceDate(""); setTotalAmount(""); setLineItems([{ do_number: "", quantity: null, unit_price: null, amount: null }])
-    setPreviewUrl(null); setExtracting(false)
+    setPreviewUrl(null); setIsPdf(false); setExtracting(false)
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPreviewUrl(URL.createObjectURL(file))
+    const fileIsPdf = file.type === "application/pdf"
+    setIsPdf(fileIsPdf)
+    setPreviewUrl(fileIsPdf ? null : URL.createObjectURL(file))
     setExtracting(true)
     setError("")
 
@@ -146,9 +148,20 @@ export default function UploadInvoiceModal({ suppliers }: { suppliers: Supplier[
             <div className="mb-4">
               <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden"
                 onChange={handleFileChange} />
-              {previewUrl ? (
+              {(previewUrl || isPdf) ? (
                 <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
-                  <img src={previewUrl} alt="Invoice" className="w-full max-h-40 object-contain" />
+                  {isPdf ? (
+                    <div className="flex flex-col items-center justify-center h-24 gap-2 text-gray-400">
+                      <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                      <span className="text-xs font-medium text-gray-500">PDF selected</span>
+                    </div>
+                  ) : (
+                    <img src={previewUrl!} alt="Invoice" className="w-full max-h-40 object-contain" />
+                  )}
                   {extracting && (
                     <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
                       <p className="text-xs font-semibold text-gray-500">Extracting with AI…</p>
@@ -163,10 +176,10 @@ export default function UploadInvoiceModal({ suppliers }: { suppliers: Supplier[
                 <button onClick={() => fileRef.current?.click()}
                   className="w-full h-24 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1.5 text-gray-400">
                   <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
                   </svg>
-                  <span className="text-xs font-medium">Tap to scan invoice (AI auto-fill)</span>
+                  <span className="text-xs font-medium">Tap to upload invoice (image or PDF)</span>
                 </button>
               )}
             </div>

@@ -16,6 +16,17 @@ const NAV = [
     ),
   },
   {
+    href: "/finance/orders",
+    label: "D.O.s",
+    icon: (active: boolean) => (
+      <svg className="size-6" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth={active ? "2.5" : "2"} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    ),
+  },
+  {
     href: "/finance/reconciliation",
     label: "Invoices",
     icon: (active: boolean) => (
@@ -41,6 +52,18 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href: "/finance/import",
+    label: "Import",
+    icon: (active: boolean) => (
+      <svg className="size-6" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth={active ? "2.5" : "2"} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function FinanceNav() {
@@ -52,7 +75,7 @@ export default function FinanceNav() {
         const active = path.startsWith(href)
         return (
           <Link key={href} href={href}
-            className="flex flex-col items-center gap-1 py-2 px-6"
+            className="flex flex-col items-center gap-1 py-2 px-2"
             style={{ color: active ? "#1a3a5c" : "#9ca3af" }}>
             {icon(active)}
             <span className="text-[10px] font-semibold tracking-wide">{label}</span>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import UploadInvoiceModal from "./UploadInvoiceModal"
+import ReconciliationFilters from "./ReconciliationFilters"
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
   pending:     { bg: "#f3f4f6", text: "#6b7280", label: "Pending" },
@@ -66,28 +67,7 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 space-y-3">
-        {/* Status tabs */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {["all", "pending", "matched", "discrepancy", "unmatched", "approved"].map((s) => (
-            <Link key={s} href={`/finance/reconciliation?status=${s}${supplier ? `&supplier=${supplier}` : ""}`}
-              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
-              style={status === s
-                ? { backgroundColor: "#1a3a5c", color: "#fff" }
-                : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
-              {s === "all" ? "All" : STATUS_STYLE[s]?.label ?? s}
-            </Link>
-          ))}
-        </div>
-        {/* Supplier filter */}
-        <select defaultValue={supplier}
-          onChange={e => { const url = new URL(window.location.href); url.searchParams.set("supplier", e.target.value); window.location.href = url.toString() }}
-          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-700 bg-white outline-none">
-          <option value="">All suppliers</option>
-          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-      </div>
+      <ReconciliationFilters status={status} supplier={supplier} suppliers={suppliers} />
 
       {/* Invoice list */}
       <div className="flex flex-col gap-2.5 px-4 py-4">
