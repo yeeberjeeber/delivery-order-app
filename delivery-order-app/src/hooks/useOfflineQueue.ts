@@ -8,6 +8,7 @@ export function useOfflineQueue() {
   const [isOnline,     setIsOnline]     = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
   const [syncing,      setSyncing]      = useState(false)
+  const [syncedCount,  setSyncedCount]  = useState(0)
   const syncingRef = useRef(false)
 
   const refreshCount = useCallback(async () => {
@@ -43,6 +44,7 @@ export function useOfflineQueue() {
           if (res.ok) {
             await dequeue(item.id)
             setPendingCount(c => Math.max(0, c - 1))
+            setSyncedCount(c => c + 1)
           }
         } catch { /* network error — leave in queue, try next time */ }
       }
@@ -72,5 +74,5 @@ export function useOfflineQueue() {
     }
   }, [syncQueue, refreshCount])
 
-  return { isOnline, pendingCount, syncing, refreshCount }
+  return { isOnline, pendingCount, syncing, syncedCount, refreshCount }
 }

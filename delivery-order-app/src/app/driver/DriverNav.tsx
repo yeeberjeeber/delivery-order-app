@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+
+const TABS = ["/driver/dashboard", "/driver/upload", "/driver/history"]
 
 const NAV = [
   {
@@ -40,16 +41,36 @@ const NAV = [
 ]
 
 export default function DriverNav() {
-  const pathname = usePathname()
+  const [activeIdx, setActiveIdx] = useState(() => {
+    if (typeof window === "undefined") return 0
+    return Math.max(0, TABS.indexOf(window.location.pathname))
+  })
+
+  useEffect(() => {
+    const update = () => {
+      const idx = TABS.indexOf(window.location.pathname)
+      if (idx !== -1) setActiveIdx(idx)
+    }
+    window.addEventListener("driver-tab-change", update)
+    window.addEventListener("popstate", update)
+    return () => {
+      window.removeEventListener("driver-tab-change", update)
+      window.removeEventListener("popstate", update)
+    }
+  }, [])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100"
       style={{ boxShadow: "0 -4px 12px rgba(0,0,0,0.06)" }}>
       <div className="flex max-w-sm mx-auto">
-        {NAV.map(({ href, label, icon }) => {
-          const active = pathname === href
+        {NAV.map(({ href, label, icon }, idx) => {
+          const active = activeIdx === idx
           return (
-            <Link key={href} href={href}
+            <button key={href}
+              onClick={() => {
+                window.history.replaceState(null, "", href)
+                window.dispatchEvent(new Event("driver-tab-change"))
+              }}
               className="relative flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors"
               style={{ color: active ? "#1a3a5c" : "#9ca3af" }}>
               {icon}
@@ -57,7 +78,7 @@ export default function DriverNav() {
               {active && (
                 <span className="absolute bottom-0 w-8 h-0.5 rounded-full" style={{ backgroundColor: "#1a3a5c" }} />
               )}
-            </Link>
+            </button>
           )
         })}
       </div>

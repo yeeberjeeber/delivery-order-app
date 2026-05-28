@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { usePathname } from "next/navigation"
 import DashboardTab from "./DashboardTab"
 import UploadForm from "./upload/UploadForm"
 import HistoryClient from "./history/HistoryClient"
@@ -47,13 +47,10 @@ export default function DriverShell({
   vehicles, suppliers, projects, supervisors,
   historyOrders,
 }: DriverShellProps) {
-  const router   = useRouter()
-  const pathname = usePathname()
+  const pathname  = usePathname()
+  const isMainTab = TABS.indexOf(pathname) !== -1
 
-  const tabIdx   = TABS.indexOf(pathname)
-  const isMainTab = tabIdx !== -1
-
-  const [activeIdx, setActiveIdx] = useState(Math.max(0, tabIdx))
+  const [activeIdx, setActiveIdx] = useState(Math.max(0, TABS.indexOf(pathname)))
   const [offset,    setOffset]    = useState(0)
   const [dragging,  setDragging]  = useState(false)
 
@@ -66,14 +63,32 @@ export default function DriverShell({
   useEffect(() => { activeIdxRef.current = activeIdx }, [activeIdx])
   useEffect(() => { offsetRef.current = offset }, [offset])
 
-  // Sync URL → active tab (DriverNav taps, "Capture D.O." link, browser back)
+  // Switch tab without a Next.js navigation (no network request — safe offline)
+  const switchTab = useCallback((idx: number) => {
+    setActiveIdx(idx)
+    setOffset(0)
+    setDragging(false)
+    window.history.replaceState(null, '', TABS[idx])
+    window.dispatchEvent(new Event('driver-tab-change'))
+  }, [])
+
+  // Sync active tab when DriverNav or browser back fires
   useEffect(() => {
-    if (tabIdx !== -1 && tabIdx !== activeIdxRef.current) {
-      setActiveIdx(tabIdx)
-      setOffset(0)
-      setDragging(false)
+    const handleTabChange = () => {
+      const idx = TABS.indexOf(window.location.pathname)
+      if (idx !== -1 && idx !== activeIdxRef.current) {
+        setActiveIdx(idx)
+        setOffset(0)
+        setDragging(false)
+      }
     }
-  }, [tabIdx])
+    window.addEventListener('driver-tab-change', handleTabChange)
+    window.addEventListener('popstate', handleTabChange)
+    return () => {
+      window.removeEventListener('driver-tab-change', handleTabChange)
+      window.removeEventListener('popstate', handleTabChange)
+    }
+  }, [])
 
   // Non-passive touch handlers so we can call preventDefault on horizontal swipes
   useEffect(() => {
@@ -133,9 +148,8 @@ export default function DriverShell({
         curr >  COMMIT_THRESHOLD && idx > 0               ? idx - 1 :
         idx
 
-      setActiveIdx(newIdx)
-      setOffset(0)
-      if (newIdx !== idx) router.replace(TABS[newIdx], { scroll: false })
+      if (newIdx !== idx) switchTab(newIdx)
+      else setOffset(0)
     }
 
     el.addEventListener("touchstart", onTouchStart, { passive: true  })
@@ -146,7 +160,7 @@ export default function DriverShell({
       el.removeEventListener("touchmove",  onTouchMove)
       el.removeEventListener("touchend",   onTouchEnd)
     }
-  }, [isMainTab, router])
+  }, [isMainTab, switchTab])
 
   // Non-tab route (history detail, profile, etc.) — just render the page normally
   if (!isMainTab) {
@@ -173,6 +187,7 @@ export default function DriverShell({
           <DashboardTab
             firstName={firstName} greeting={greeting}
             stats={stats} orders={todayOrders}
+            onGoToUpload={() => switchTab(1)}
           />
         </div>
 

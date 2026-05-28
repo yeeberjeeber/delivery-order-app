@@ -1,4 +1,4 @@
-import Link from "next/link"
+"use client"
 
 type Order = {
   id: string
@@ -16,6 +16,7 @@ type Props = {
   greeting: string
   stats: { total: number; pending: number; verified: number; flagged: number }
   orders: Order[]
+  onGoToUpload: () => void
 }
 
 const STATUS = {
@@ -24,7 +25,7 @@ const STATUS = {
   flagged:  { label: "Flagged",  bg: "#fee2e2", text: "#b91c1c" },
 }
 
-export default function DashboardTab({ firstName, greeting, stats, orders }: Props) {
+export default function DashboardTab({ firstName, greeting, stats, orders, onGoToUpload }: Props) {
   return (
     <div className="flex flex-col">
 
@@ -46,8 +47,8 @@ export default function DashboardTab({ firstName, greeting, stats, orders }: Pro
 
       {/* CTA */}
       <div className="px-4 mt-5">
-        <Link
-          href="/driver/upload"
+        <button
+          onClick={onGoToUpload}
           className="flex items-center justify-center gap-3 w-full h-14 rounded-2xl text-white font-semibold text-base active:scale-[0.98] transition-transform"
           style={{ backgroundColor: "#1a3a5c", boxShadow: "0 4px 14px rgba(26,58,92,0.3)" }}
         >
@@ -57,7 +58,7 @@ export default function DashboardTab({ firstName, greeting, stats, orders }: Pro
             <circle cx="12" cy="13" r="4"/>
           </svg>
           Capture Delivery Order
-        </Link>
+        </button>
       </div>
 
       {/* Today's uploads */}

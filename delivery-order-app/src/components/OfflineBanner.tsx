@@ -1,9 +1,17 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useOfflineQueue } from "@/hooks/useOfflineQueue"
 
 export default function OfflineBanner() {
-  const { isOnline, pendingCount, syncing } = useOfflineQueue()
+  const router = useRouter()
+  const { isOnline, pendingCount, syncing, syncedCount } = useOfflineQueue()
+
+  // Refresh server data each time a queued item successfully syncs
+  useEffect(() => {
+    if (syncedCount > 0) router.refresh()
+  }, [syncedCount, router])
 
   if (isOnline && pendingCount === 0) return null
 
