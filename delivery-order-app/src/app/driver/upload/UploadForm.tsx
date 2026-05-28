@@ -75,7 +75,7 @@ export default function UploadForm({
     raw: null, preview: null, compressedBase64: null, cloudinaryUrl: null,
     cloudinaryPublicId: null, uploading: false, uploadError: null,
   })
-  const [queued, setQueued] = useState(false)
+  const [toast, setToast]   = useState<{ visible: boolean; doNumber: string; count: number }>({ visible: false, doNumber: "", count: 0 })
   const [extract, setExtract] = useState<ExtractState>({ status: "idle" })
   const [gps, setGps] = useState<GpsState>({ status: "idle", lat: null, lng: null })
   const [duplicate, setDuplicate] = useState<DuplicateState>({ status: "idle", existingOrder: null })
@@ -259,14 +259,19 @@ export default function UploadForm({
       duplicate_override_reason: duplicateReason || null,
     }
 
-    // Offline — save to IndexedDB queue and show confirmation
+    // Offline — save to IndexedDB queue, reset form, show toast
     if (!navigator.onLine) {
-      await enqueue({
-        payload,
-        photoBase64: photo.compressedBase64 ?? undefined,
-      })
+      await enqueue({ payload, photoBase64: photo.compressedBase64 ?? undefined })
       setSubmitting(false)
-      setQueued(true)
+      // Reset form for next submission
+      setForm(BLANK_FORM)
+      setPhoto({ raw: null, preview: null, compressedBase64: null, cloudinaryUrl: null, cloudinaryPublicId: null, uploading: false, uploadError: null })
+      setExtract({ status: "idle" })
+      setDuplicate({ status: "idle", existingOrder: null })
+      setDuplicateOverride(false)
+      setDuplicateReason("")
+      setError("")
+      setToast(prev => ({ visible: true, doNumber: form.doNumber, count: prev.count + 1 }))
       return
     }
 
@@ -294,35 +299,47 @@ export default function UploadForm({
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  if (queued) {
-    return (
-      <div className="flex flex-col min-h-svh items-center justify-center px-6 text-center gap-5">
-        <div className="size-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#fef9c3" }}>
-          <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="#a16207"
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (!toast.visible) return
+    const t = setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000)
+    return () => clearTimeout(t)
+  }, [toast.visible, toast.count])
+
+  return (
+    <div className="flex flex-col min-h-svh">
+
+      {/* ── Offline queued toast ──────────────────────────────────────────── */}
+      <div
+        className="fixed left-0 right-0 z-50 px-4 transition-all duration-300 ease-out"
+        style={{
+          top: toast.visible ? "80px" : "-120px",
+          pointerEvents: toast.visible ? "auto" : "none",
+        }}
+      >
+        <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5 shadow-lg"
+          style={{ backgroundColor: "#1a3a5c" }}>
+          <svg className="size-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="#fef9c3"
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 4 23 10 17 10"/>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
           </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">Saved for later</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>
+              D.O. {toast.doNumber} queued — will sync when back online
+              {toast.count > 1 && ` · ${toast.count} total queued`}
+            </p>
+          </div>
+          <button onClick={() => setToast(prev => ({ ...prev, visible: false }))}
+            className="shrink-0 text-white/60 hover:text-white mt-0.5">
+            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
-        <div>
-          <p className="text-lg font-bold text-gray-900">Saved for later</p>
-          <p className="text-sm text-gray-500 mt-1">
-            You&apos;re offline. This D.O. will be submitted automatically when your connection is restored.
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/driver/dashboard")}
-          className="mt-2 w-full max-w-xs h-12 rounded-2xl text-sm font-semibold text-white"
-          style={{ backgroundColor: "#1a3a5c" }}
-        >
-          Back to Dashboard
-        </button>
       </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col min-h-svh">
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="px-5 pt-14 pb-5" style={{ backgroundColor: "#1a3a5c" }}>
